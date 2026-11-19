@@ -1,0 +1,156 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Would You Survive Ancient Egypt?</title><style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#30281d;background:#eee7d7}*{box-sizing:border-box}body{margin:0;padding:18px}.game{max-width:820px;margin:auto;background:#fffdf6;border:1px solid #d9cba9;border-radius:18px;overflow:hidden;box-shadow:0 12px 36px #30251518}.header{background:#2e352f;color:#fff5d9;padding:25px 30px}.kicker{font-size:12px;letter-spacing:2px;font-weight:800;color:#d8c18c;text-transform:uppercase}.header h1{font-size:clamp(27px,5vw,41px);margin:8px 0}.header p{margin:0;color:#e6d9b7}.content{padding:25px 30px;min-height:320px}.chapter{color:#806c49;font-weight:800;font-size:12px;letter-spacing:1.3px;text-transform:uppercase}.content h2{font-size:clamp(22px,4vw,30px);margin:10px 0 15px}.story{white-space:pre-line;line-height:1.76;font-size:16px}.choice{width:100%;display:block;text-align:left;margin:12px 0;padding:16px 18px;border-radius:12px;border:1px solid #d9cba9;background:#fbf6e9;color:#30281d;font-size:15px;line-height:1.5;cursor:pointer}.choice:hover,.choice:focus-visible{background:#f0e5ca;border-color:#9e824a;outline:2px solid #c4a76b;outline-offset:1px}.button{border:0;border-radius:11px;padding:13px 19px;background:#35564b;color:white;font-size:15px;font-weight:750;cursor:pointer}.button:hover{background:#27463c}.scene-icon{font-size:52px;text-align:center;margin:12px 0 20px}.note{border-left:4px solid #b49352;background:#f7f0df;padding:13px 16px;margin:20px 0;line-height:1.65}.footer{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #e2d7bd;padding:14px 30px;color:#76684e;font-size:13px}.ending{background:#f1e6c9;border-radius:14px;padding:20px;text-align:center;margin:15px 0}.ending .icon{font-size:55px}.ending h2{margin:8px 0}.ending p{line-height:1.7}.journal{margin-top:22px}.journal details{border:1px solid #dfd2b7;border-radius:10px;padding:12px}.journal summary{cursor:pointer;font-weight:700}.journal-item{border-top:1px solid #e7dcc7;margin-top:11px;padding-top:11px;line-height:1.6}.muted{color:#76684e}.controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}.small{font-size:13px}.status{color:#806c49;font-size:13px;font-weight:700}.button.secondary{background:#ede1c5;color:#30281d}@media(max-width:520px){body{padding:0}.game{border-radius:0;border:0;min-height:100vh}.header{padding:22px 20px}.content{padding:22px 20px}.footer{padding:14px 20px}}
+</style></head><body><main class="game"><header class="header"><div class="kicker">Historical Survival Adventure</div><h1>Would You Survive Ancient Egypt?</h1><p>The Pharaoh's Impossible Deadline · Old Kingdom, around 2550 BC</p></header><section id="screen" class="content" aria-live="polite"></section><footer class="footer"><span id="chapter">A new life awaits</span><span>Every choice changes your story</span></footer></main><script>
+(()=>{'use strict';
+const screen=document.getElementById('screen'),chapterLabel=document.getElementById('chapter');
+let state,sceneId,history,visits,run=0;
+function reset(){state={food:5,health:5,trust:2,skill:0,boat:0,crew:0,help:0,risks:0,flags:[]};sceneId='intro';history=[];visits=0;render()}
+function has(f){return state.flags.includes(f)}
+function choice(text,next,delta={},result='',when=()=>true){return {text,next,delta,result,when}}
+function scene(title,text,choices,icon='🏺'){return {title,text,choices,icon}}
+function change(d){for(const [k,v] of Object.entries(d)){if(k==='flag'){if(!has(v))state.flags.push(v)}else if(typeof state[k]==='number'){state[k]=Math.max(0,Math.min(10,state[k]+v))}}}
+function nodes(){return {
+intro:scene('The River and the Royal Order',`You live in a farming village near the Nile. Your family depends on the river's annual flood, but this year's water has risen higher than expected. Some grain stores are damp, and the fields will need attention when the water recedes.\n\nYour older cousin Hori has news: officials are organizing labor and supplies for a royal pyramid-building project. Hori wants to join a work crew. Your friend Merit, whose family owns a small riverboat, says transporting supplies might be a better opportunity.\n\nYour mother looks at the wet grain baskets. “An opportunity is only useful if we can eat afterward.”`,[
+choice('Stay near the village and protect the family’s next harvest.','fields',{flag:'farmer',food:1},'You stay with the fields. Hori calls you sensible, which somehow sounds like an insult.'),
+choice('Join Hori and seek work on the royal building project.','crewArrival',{flag:'worker',crew:1},'You leave for the royal work site with Hori. Your mother makes you promise to send word home.'),
+choice('Travel with Merit to carry goods along the Nile.','boatDeparture',{flag:'sailor',boat:1},'Merit welcomes you aboard her family’s boat. “Try not to fall in,” she says. “We have a schedule.”')],'🌊'),
+fields:scene('The Flood Leaves Its Mark',`The floodwater recedes, leaving fertile silt—but it also damaged part of the irrigation channel. Your neighbor Dedi wants everyone to repair the channel together. Your mother worries that your family has too little grain to spare for a long workday.`,[
+choice('Help Dedi organize the repairs and share labor.','canal',{trust:2,food:-1,flag:'cooperated'},'The neighbors work together. Dedi promises to remember your help.'),
+choice('Focus on saving and drying the family’s stored grain.','storehouse',{food:2,trust:-1,flag:'savedgrain'},'You salvage much of the grain, but the canal remains damaged.'),
+choice('Ask an official whether the village can receive help with the repairs.','official',{trust:0,food:-1,flag:'petition'},'You set out to find an official. Dedi warns that officials have many demands on their time.')],'🌾'),
+canal:scene('A Crack in the Canal Bank',`The repair work is nearly finished when a weakened section of the canal bank begins to crumble. Water rushes toward the fields. Dedi calls for everyone to get clear, but the tools and grain baskets are still on the low ground.`,[
+choice('Get everyone clear and abandon the supplies.','safeFields',{health:1,food:-2,help:1},'Everyone reaches higher ground. Some supplies wash away.'),
+choice('Help Dedi reinforce the bank from solid ground.','safeFields',{health:-1,trust:1,skill:1,risks:1},'You manage to slow the water. The bank holds, but you are exhausted.'),
+choice('Run onto the crumbling bank to rescue the grain baskets.','bankPeril',{health:-2,risks:2},'The ground gives way beneath you.')],'🧱'),
+bankPeril:scene('The Bank Gives Way',`You slide into fast-moving water. Dedi throws you a rope, but it lands just beyond your reach. A reed-covered slope lies downstream, while the collapsing bank is directly behind you.`,[
+choice('Move with the current toward the reed-covered slope.','safeFields',{health:-2,food:-1},'You scramble onto the slope, bruised and shaking, but alive.'),
+choice('Grab at the collapsing mud wall to climb straight up.','bankDeath',{health:-5},'The mud gives way again before you can escape.'),
+choice('Call for Dedi to move closer with the rope.','safeFields',{trust:1,health:-1},'Dedi and the others pull you to safety. Nobody lets you forget this decision.')],'🌊'),
+safeFields:scene('A Chance to Replant',`The canal is usable again, although some of the village's supplies are gone. Dedi says the community can still produce a harvest if people cooperate. Hori sends word that workers are needed at the royal site, and Merit has offered to transport seed grain upriver.`,[
+choice('Organize planting with Dedi and the other families.','fieldHarvest',{food:2,trust:2,flag:'community'},'The village pools tools and labor to prepare the fields.'),
+choice('Join Hori’s work crew to earn rations while the fields recover.','crewArrival',{food:-1,crew:1},'You travel to the royal work site with Hori.'),
+choice('Help Merit carry seed grain by boat.','boatDeparture',{boat:1,trust:1},'Merit makes room for you aboard the boat.')],'🌱'),
+storehouse:scene('The Grain Jar Mystery',`You dry the rescued barley in the sun. But one morning several baskets are missing. Your younger brother Kebi swears he knows nothing. He is standing beside an unusually large pile of crumbs.`,[
+choice('Ask Kebi to explain before accusing anyone.','grainTruth',{trust:1,flag:'patient'},'Kebi finally admits that he moved the grain to a neighbor’s shed when rain threatened.'),
+choice('Report the missing grain to the village official.','grainDispute',{trust:-1},'An official agrees to hear the complaint, but everyone is now suspicious.'),
+choice('Search the storage sheds yourself before the next rain.','grainTruth',{health:-1,food:1},'You find the missing baskets in a nearby shed. Kebi has some explaining to do.')],'🧺'),
+grainTruth:scene('The Grain Was Never Stolen',`Kebi moved the baskets to keep them dry. He neglected to tell anyone because, as he explains, “I was very busy being helpful.” The saved barley is valuable, but the village irrigation channel still needs attention.`,[
+choice('Use some saved grain to pay neighbors for canal repairs.','fieldHarvest',{food:-2,trust:2,flag:'repaired'},'Dedi gathers a repair team. The village may still have a good harvest.'),
+choice('Keep the grain and work only your own fields.','dryHarvest',{food:1,trust:-2},'Your household has reserves, but the shared water supply remains uncertain.'),
+choice('Offer the grain to Merit in exchange for a place on her next trip.','boatDeparture',{food:-1,boat:1},'Merit agrees to take you along the river.')],'🌾'),
+grainDispute:scene('A Very Public Argument',`The official questions several families. Kebi finally admits he moved the grain to protect it from rain. The missing baskets are recovered, but your neighbors resent being suspected of theft.`,[
+choice('Apologize and offer to help repair the canal.','fieldHarvest',{trust:2,food:-1},'Dedi accepts the apology. The community returns to work.'),
+choice('Keep the recovered grain and avoid the neighbors.','dryHarvest',{food:2,trust:-2},'Your household has food, but few neighbors offer help.'),
+choice('Leave the dispute behind and join Hori at the work site.','crewArrival',{crew:1,food:-1},'You depart for the royal building project.')],'⚖️'),
+official:scene('The Official Has a Proposal',`A local official explains that labor and supplies are being organized for the royal project. He cannot promise an immediate canal repair, but he can arrange work rations for those who join a crew.`,[
+choice('Accept a place on the royal work crew.','crewArrival',{crew:1,food:1},'You join Hori and travel toward the building site.'),
+choice('Return home and persuade neighbors to share the repair work.','canal',{trust:1},'Dedi agrees to help organize the village.'),
+choice('Ask Merit to carry a request for tools to another settlement.','boatDeparture',{boat:1,food:-1},'Merit agrees, provided you help on the journey.')],'📜'),
+crewArrival:scene('The Work Crews of the Pharaoh',`The royal building site is enormous. Stone blocks arrive from quarries, skilled workers shape materials, and labor teams move supplies. Hori has joined a crew hauling stone on sledges. A supervisor named Seneb is assigning jobs.\n\nSeneb tells you, “A good worker follows instructions. A clever worker knows when to ask questions.”`,[
+choice('Join Hori’s hauling crew.','stoneHaul',{crew:1,health:-1,skill:1,flag:'hauler'},'You learn to coordinate with a team moving heavy stone.'),
+choice('Offer to help track deliveries and food rations.','records',{skill:1,trust:1,flag:'records'},'Seneb assigns you to help check deliveries and ration counts.'),
+choice('Ask to work with the river transport team instead.','riverDock',{boat:1,crew:1,flag:'dock'},'You are sent to the river landing, where boats bring materials and food.')],'🧱'),
+stoneHaul:scene('The Sledge That Would Not Move',`Your crew must move a heavy limestone block. Hori insists that pulling harder will solve everything. Seneb points to the prepared path and asks how to reduce resistance before the team strains itself.`,[
+choice('Prepare the route and coordinate the crew’s pull.','crewProgress',{skill:2,trust:1},'The block moves steadily. Seneb praises the teamwork.'),
+choice('Pull immediately to meet the deadline.','sledgePeril',{health:-2,risks:1},'The sledge jerks sideways and the ropes snap tight.'),
+choice('Ask Seneb to reassign the crew until the route is ready.','crewProgress',{trust:-1,health:1},'You lose time, but the crew avoids a dangerous pull.')],'🪨'),
+sledgePeril:scene('The Rope Snaps',`The sledge shifts unexpectedly. A heavy block begins sliding toward the edge of the prepared path. Hori is close enough to be struck. You have only moments to react.`,[
+choice('Shout a warning and move everyone clear.','crewProgress',{health:1,trust:1},'The block slips off the path, but the crew escapes.'),
+choice('Try to hold the moving stone in place yourself.','stoneDeath',{health:-5},'The enormous block cannot be stopped by one person.'),
+choice('Pull Hori out of the way and abandon the equipment.','crewProgress',{health:-2,trust:2},'You drag Hori clear. Both of you are injured, but alive.')],'⚠️'),
+records:scene('The Missing Rations',`You notice that the grain counted at the river landing does not match the amount recorded for the work crews. Hori complains that his team is hungry. Seneb asks you to investigate before accusing anyone.`,[
+choice('Recount the deliveries with the storehouse workers.','rationTruth',{skill:1,trust:1},'You find that some sacks were recorded twice.'),
+choice('Accuse the delivery crew of stealing.','rationAccusation',{trust:-2},'The accusation spreads quickly and causes an argument.'),
+choice('Ignore the mismatch so the schedule stays on track.','hungryCrew',{food:-2,crew:-1},'The ration shortage continues. Workers begin to complain.')],'📜'),
+rationTruth:scene('An Error, Not a Thief',`The ration problem came from a counting mistake. Seneb corrects the records, and the crews receive their proper food allocation. Hori claims he knew all along. He did not.`,[
+choice('Stay with the record keepers and help plan the next deliveries.','projectEnding',{skill:2,trust:1},'Your careful work helps keep the project supplied.'),
+choice('Join the crews at the river landing.','riverDock',{boat:1},'You head to the Nile landing to help unload boats.'),
+choice('Return home with your earned rations.','homeEnding',{food:2},'You bring food and new skills back to your family.')],'📋'),
+rationAccusation:scene('The Supervisor Wants Answers',`The delivery workers protest. Seneb discovers the shortage was a recording error, not theft. You must decide how to repair the damage to the crew's trust.`,[
+choice('Admit your mistake and help correct the records.','projectEnding',{trust:1,skill:1},'Seneb accepts your honesty, although the workers remember the accusation.'),
+choice('Leave the work site and return to your family.','homeEnding',{food:1,trust:-1},'You depart with modest rations and a lesson in checking evidence.'),
+choice('Transfer to river transport where you can start fresh.','riverDock',{boat:1},'You take a position at the Nile landing.')],'⚖️'),
+hungryCrew:scene('The Crew Refuses to Work',`Hori's crew is angry about missing rations. Some workers threaten to stop hauling until the problem is resolved. Seneb asks you what to do next.`,[
+choice('Help recount the supplies and correct the error.','rationTruth',{trust:1},'The records are checked again.'),
+choice('Leave the angry crew and seek work at the river landing.','riverDock',{boat:1},'You move to the landing before the argument grows.'),
+choice('Demand that everyone work without food until the deadline.','crewCrisis',{trust:-2,health:-2,risks:1},'Exhaustion and anger spread through the crew.')],'🍞'),
+crewCrisis:scene('A Dangerous Shortcut',`The exhausted workers attempt to move a stone block without enough people. Hori stumbles near the sledge. You can still stop the work before someone is hurt.`,[
+choice('Call for a halt and get the crew food and rest.','homeEnding',{health:1,food:-1},'The supervisor reluctantly stops the work. You return home when your assignment ends.'),
+choice('Help move the block despite the shortage of workers.','stoneDeath',{health:-5},'The overloaded ropes fail, and the block slides out of control.'),
+choice('Find Seneb and explain why the work cannot continue safely.','projectEnding',{trust:1,skill:1},'Seneb reorganizes the work and corrects the ration problem.')],'⚠️'),
+crewProgress:scene('The Deadline Approaches',`The work crews have made progress, but the next delivery of stone is late. Seneb says the river transport team needs help. Hori is tired and wants to go home with the rations he has earned.`,[
+choice('Help the transport team bring the next shipment.','riverDock',{boat:1,trust:1},'You head toward the Nile landing.'),
+choice('Remain with the work crews to finish the assigned task.','projectEnding',{crew:1,skill:1,health:-1},'Your team completes its assignment after days of hard work.'),
+choice('Return home with Hori and your earned rations.','homeEnding',{food:2,health:1},'You and Hori make the journey home together.')],'🏗️'),
+riverDock:scene('The River Landing',`Boats arrive carrying food, tools, and stone. Merit is there with her family's boat. She warns that the current is strong and one landing is crowded. Seneb needs supplies moved safely, not merely quickly.`,[
+choice('Help Merit guide a loaded boat to a safer landing.','riverHazard',{boat:1,skill:1},'You travel along the bank toward a quieter landing.'),
+choice('Organize workers to unload the boats already docked.','projectEnding',{trust:1,crew:1},'You help unload the supplies and keep them moving to the work site.'),
+choice('Accept a longer trading trip with Merit instead.','boatDeparture',{boat:1,food:-1},'You join Merit for a journey along the Nile.')],'⛵'),
+boatDeparture:scene('A Journey on the Nile',`Merit's family boat carries grain and pottery to another settlement. She knows the river well, but warns that strong currents and shifting shallows can still cause trouble. Kebi has packed enough snacks for himself and none for you.`,[
+choice('Take the slower route with familiar landing places.','market',{boat:1,food:-1},'You reach a busy market safely, though later than planned.'),
+choice('Take a shorter route through a difficult stretch of river.','riverHazard',{risks:1,boat:1},'The boat enters a stretch of fast current.'),
+choice('Stop at a nearby village to exchange goods and gather information.','villageTrade',{trust:1,food:-1},'You meet farmers who know the local river conditions.')],'⛵'),
+riverHazard:scene('The Boat Strikes a Shoal',`The boat jolts against a shallow patch. One cargo rope snaps, and several baskets begin sliding toward the water. Merit orders everyone to keep their balance. The current is pushing the boat sideways.`,[
+choice('Secure the passengers first, even if cargo is lost.','market',{health:1,food:-2},'Everyone stays aboard. Some goods are lost, but Merit gets the boat free.'),
+choice('Use a pole from the deck to push away from the shoal.','market',{health:-1,skill:1,boat:1},'The boat slides free after a difficult effort.'),
+choice('Jump into the current to catch the drifting cargo.','riverPeril',{health:-2,risks:2},'You plunge into the water as the boat drifts away.')],'🌊'),
+riverPeril:scene('Swept Downstream',`The current is stronger than you expected. The drifting cargo is already out of reach. Merit shouts from the boat, and a patch of reeds lies near the bank.`,[
+choice('Swim diagonally toward the reed-lined bank.','market',{health:-2,food:-1},'You reach the reeds exhausted. Merit finds you downstream.'),
+choice('Keep chasing the cargo into deeper water.','riverDeath',{health:-5},'The current carries you into deep water before help arrives.'),
+choice('Float and call for help while Merit brings the boat around.','market',{health:-1,trust:1},'Merit reaches you with a rope. The cargo is gone, but you survive.')],'🌊'),
+villageTrade:scene('A Bargain at the River Market',`A farmer offers extra grain in exchange for pottery. Another trader offers linen at a better price, but cannot promise when he will return with payment. Merit reminds you that the family needs dependable supplies.`,[
+choice('Accept the reliable grain exchange.','market',{food:2,trust:1},'The exchange is fair, and the boat leaves with useful supplies.'),
+choice('Take the higher-value offer and wait for payment.','latePayment',{food:-2,risks:1},"You agree to wait for the trader's return."),
+choice('Keep your pottery and continue toward the royal landing.','riverDock',{boat:1},'You decide the goods may be more valuable at the next stop.')],'⚖️'),
+latePayment:scene('The Trader Has Not Returned',`Two days pass. The trader has not returned with payment, and the boat's food supplies are running low. Merit is not pleased. “A promise is not a sack of barley,” she says.`,[
+choice('Leave without payment and return to a familiar market.','market',{food:-2,health:-1},'You cut your losses and depart hungry.'),
+choice('Ask local families for temporary work in exchange for food.','market',{food:1,trust:1,skill:1},'You help with harvest work and earn enough grain to continue.'),
+choice('Use the last food to wait another week for the trader.','hungerPeril',{food:-3,risks:2},'The food runs out before the trader returns.')],'⌛'),
+hungerPeril:scene('The Empty Food Basket',`You and Merit are weak from hunger. A nearby settlement is a day's journey away, but the boat is slow and you have almost no supplies.`,[
+choice('Ask the nearby settlement for food in exchange for labor.','market',{food:2,health:-2},'The villagers offer food for work. You survive the journey, but return much poorer.'),
+choice('Attempt a longer journey without stopping for help.','hungerDeath',{health:-5},'Your strength fails before you reach the next settlement.'),
+choice('Sell some remaining pottery at a low price for food.','market',{food:2,trust:-1},'You get enough food to continue, though the trade is disappointing.')],'🍞'),
+market:scene('The Return Journey',`Merit has brought the boat through a difficult trip. Your family is waiting for news, and the royal work crews are still receiving supplies. You must decide where to take your experience next.`,[
+choice('Return to your family with what you have earned.','tradeEnding',{food:2,trust:1},'You bring useful supplies home and tell the story of your journey.'),
+choice('Continue transporting goods for the royal project.','transportEnding',{skill:1,boat:1},'You become a more experienced river worker.'),
+choice('Use your experience to help your village exchange grain and tools.','villageEnding',{trust:2,food:1},'Your trading connections begin helping the village.')],'🏺'),
+fieldHarvest:scene('The Fields Turn Green',`Your household and neighbors have prepared the fields. The Nile's flood left fertile soil, and the irrigation channel is working. But a portion of the crop looks weaker than expected, and the community must decide how to use the harvest.`,[
+choice('Save seed and household food before sharing any surplus.','farmEnding',{food:2,trust:1},'Your family has reserves for the coming season.'),
+choice('Share supplies with struggling neighbors and plan the next planting together.','villageEnding',{food:-1,trust:2},'The village supports one another through the lean months.'),
+choice('Trade most of the harvest for tools and hope next year is better.','thinHarvest',{food:-3,skill:1,risks:1},'You acquire useful equipment but leave little food in storage.')],'🌾'),
+dryHarvest:scene('The Field Without Enough Water',`Your family saved some grain, but the damaged irrigation channel has left the crops uneven. Dedi's family has enough water, while your fields are struggling.`,[
+choice('Ask Dedi to help repair the channel, offering labor in return.','fieldHarvest',{trust:1,food:-1},'Dedi agrees to help, though you must work hard to restore trust.'),
+choice('Use your remaining grain to survive the season and stay home.','thinHarvest',{food:-2},'The family gets through the season, but reserves are low.'),
+choice('Leave the failing fields and seek work at the royal site.','crewArrival',{food:-1,crew:1},'You set out to find Hori.')],'☀️'),
+thinHarvest:scene('The Last Sacks of Barley',`Your family's food stores are dangerously low. Kebi is hungry, and your mother says the household cannot afford another failed harvest. Dedi might help, but your relationship with the neighbors matters.`,[
+choice('Ask neighbors for help and offer to work in exchange.','villageEnding',{food:1,trust:1,health:-1},'The neighbors offer some food and work, though the household must rebuild.'),
+choice('Take a place on a royal work crew to earn rations.','crewArrival',{crew:1,food:-1},'You leave for the royal work site hoping to earn food.'),
+choice('Keep the last grain for planting and go without food for now.','hungerPeril',{food:-3,health:-2,risks:1},'The household grows weak as the grain is set aside.')],'🍞')
+}}
+const endings={
+bankDeath:['🕯️','The Canal Claimed You','The collapsing bank and powerful water proved fatal. Dedi tells your family that you tried to save the village’s grain.'],
+stoneDeath:['🕯️','The Stone Could Not Be Stopped','A massive stone block moved beyond anyone’s control. Hori survives, but your character does not.'],
+riverDeath:['🕯️','Lost to the Nile','You chased cargo into a dangerous current. Merit searches the riverbank, but your character does not return.'],
+hungerDeath:['🕯️','The Journey That Went Too Far','Your character did not survive the shortage of food and exhausting journey. Merit returns home to tell the family.'],
+farmEnding:['🌾','Keeper of the Harvest','Your household secures food and seed for another year. The fields remain hard work, but your family has a future.'],
+villageEnding:['🤝','The Village Remembers','Your decisions help families cooperate through difficult months. People remember you as someone they could depend on.'],
+homeEnding:['🏠','Home Before the Next Flood','You return to your family with rations and experience from the royal work site. Your next challenge will be the fields at home.'],
+projectEnding:['🏗️','Builder of a Kingdom','Your work helps the royal project move forward. You have earned experience, rations, and a place among the organized work crews.'],
+transportEnding:['⛵','Master of the River Routes','You build a future transporting supplies along the Nile. You know that the river rewards skill but never guarantees safety.'],
+tradeEnding:['⚖️','Trader with a Tale','You return from the river markets with goods, experience, and several stories your family will never stop asking about.']};
+function elem(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function button(text,fn,cls='button'){const b=elem('button',cls,text);b.type='button';b.addEventListener('click',fn);return b}
+function paragraph(text,cls='story'){return elem('p',cls,text)}
+function addJournal(){const wrap=elem('div','journal');const details=elem('details');const summary=elem('summary','',`Your adventure journal (${history.length} decisions)`);details.append(summary);history.forEach((h,i)=>{const item=elem('div','journal-item');item.append(elem('strong','',`${i+1}. ${h.title}`),paragraph(h.choice,'small muted'),paragraph(h.result,'small'));details.append(item)});wrap.append(details);screen.append(wrap)}
+function render(){screen.replaceChildren();chapterLabel.textContent=sceneId==='intro'?'A new life awaits':`Scenes experienced: ${visits}`;
+if(endings[sceneId]){const [icon,title,description]=endings[sceneId],dead=['bankDeath','stoneDeath','riverDeath','hungerDeath'].includes(sceneId);const end=elem('div','ending');end.append(elem('div','icon',icon),elem('div','chapter',dead?'Your adventure ends here':'One year later…'),elem('h2','',title),paragraph(description));screen.append(end);
+if(!dead){let details=[];if(state.food<=1)details.push('Your household still faces a serious food shortage.');else if(state.food>=7)details.push('Your family has a comfortable reserve of grain.');else details.push('Your family has enough to begin planning for another season.');if(state.trust>=5)details.push('Neighbors remember the help you offered.');else if(state.trust<=1)details.push('Some relationships will need repairing.');if(state.health<=2)details.push('You are still recovering from injuries or exhaustion.');if(has('records'))details.push('Your experience keeping records may prove useful again.');if(has('sailor')||state.boat>=2)details.push('Merit says there may be another journey when the river is calm.');if(has('worker')||state.crew>=2)details.push('Hori has already begun talking about the next work assignment.');const ep=elem('div','note');ep.append(elem('strong','','Your personal epilogue'),paragraph(details.join(' ')));screen.append(ep)}
+const historyNote=elem('div','note');historyNote.append(elem('strong','','Behind the history'),paragraph('Old Kingdom Egypt relied on the Nile’s annual flood, irrigation, farming, river transport, skilled craftspeople, record keeping, and organized labor. Large royal building projects involved coordinated crews and supplies. The characters and individual events in this adventure are fictional. The game simplifies historical life and should not be taken as evidence that every worker faced these exact dangers.','small'));screen.append(historyNote);
+const controls=elem('div','controls');controls.append(button('Try a Different Life ↻',()=>{run++;reset()}));screen.append(controls);addJournal();return}
+const n=nodes()[sceneId];if(!n){screen.append(elem('h2','','A path needs repair'),paragraph('This scene could not be loaded. Please restart the adventure.'));screen.append(button('Restart',reset));return}
+const heading=elem('div','chapter',sceneId==='intro'?'Your story begins':`Chapter ${visits+1}`);screen.append(heading,elem('div','scene-icon',n.icon),elem('h2','',n.title),paragraph(n.text));
+for(const [i,c] of n.choices.entries()){if(!c.when(state))continue;const b=button(`${String.fromCharCode(65+i)}. ${c.text}`,()=>{change(c.delta);history.push({title:n.title,choice:c.text,result:c.result});sceneId=c.next;visits++;if(visits>16&&!endings[sceneId])sceneId='homeEnding';render()},'choice');screen.append(b)}
+}
+reset();
+})();
+</script></body></html>
